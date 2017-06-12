@@ -1,5 +1,7 @@
 'use strict';
 
+const PAGE_ACCESS_TOKEN = "process.env.PAGE_ACCESS_TOKEN";
+const VERIFY_TOKEN = "process.env.VERIFY_TOKEN";
 const express = require('express');
 const bodyParser = require('body-parser');
 const request = require('request');
@@ -20,7 +22,7 @@ app.get('/', function (req, res) {
 
 // for Facebook verification
 app.get('/webhook/', function (req, res) {
-	if (req.query['hub.verify_token'] === 'chatbot_verify_token') {
+	if (req.query['hub.verify_token'] === VERIFY_TOKEN) {
 		res.send(req.query['hub.challenge']);
 	} else{
         res.send('Error, wrong token');
@@ -31,3 +33,35 @@ app.get('/webhook/', function (req, res) {
 app.listen(app.get('port'), function() {
 	console.log('running on port', app.get('port'));
 });
+
+app.post('/webhook/', function (req, res) {
+    let messaging_events = req.body.entry[0].messaging
+    for (let i = 0; i < messaging_events.length; i++) {
+	    let event = req.body.entry[0].messaging[i];
+	    let sender = event.sender.id;
+	    if (event.message && event.message.text) {
+		    let text = event.message.text;
+		    sendTextMessage(sender, "Text received, echo: " + text.substring(0, 200));
+	    }
+    }
+    res.sendStatus(200);
+});
+
+function sendTextMessage(sender, text) {
+    let messageData = { text:text }
+    request({
+	    url: 'https://graph.facebook.com/v2.6/me/messages',
+	    qs: {access_token : PAGE_ACCESS_TOKEN},
+	    method: 'POST',
+		json: {
+		    recipient: {id:sender},
+			message: messageData,
+		}
+	}, function(error, response, body) {
+		if (error) {
+		    console.log('Error sending messages: ', error)
+		} else if (response.body.error) {
+		    console.log('Error: ', response.body.error)
+	    }
+    })
+}
