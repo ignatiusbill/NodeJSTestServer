@@ -2,6 +2,7 @@
 
 const PAGE_ACCESS_TOKEN = "process.env.PAGE_ACCESS_TOKEN";
 const VERIFY_TOKEN = "process.env.VERIFY_TOKEN";
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const request = require('request');
@@ -23,9 +24,11 @@ app.get('/', function (req, res) {
 // for Facebook verification
 app.get('/webhook/', function (req, res) {
 	if (req.query['hub.verify_token'] === VERIFY_TOKEN) {
-		res.send(req.query['hub.challenge']);
+		// res.send(req.query['hub.challenge']);
+        res.status(200).send(req.query['hub.challenge']);
 	} else{
-        res.send('Error, wrong token');
+        // res.send('Error, wrong token');
+        res.status(403).send('Error, wrong token');
     }
 });
 
